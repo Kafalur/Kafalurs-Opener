@@ -29,11 +29,11 @@ on_render_menu(function()
         return;
     end;
     menu.main_openDoors:render("Open Doors", "");
-    menu.main_openContainers:render("Open Containers", "");
+    menu.main_walkToContainers:render("Walk To Containers", "");
     menu.main_showContainers:render("Show Containers", "");
     menu.main_walkToShrine:render("Walk To Shrine","")
-    if menu.main_walkToShrine:get() then
-        menu.main_walkDistance:render("Distance", "Set the max distance", 1)
+    if menu.main_walkToShrine:get() or menu.main_walkToContainers:get() then
+        menu.main_walkDistance:render("Walk Distance", "Set the max distance for walking to shrines and containers", 1)
     end
     menu.main_interactDelay:render("Interaction Delay", "Set the delay between interactions", 0.1, 0.1, 1.0, 0.1)
     menu.main_tree:pop();
@@ -91,7 +91,12 @@ local function shouldInteract(obj, playerPos)
         end
     elseif skin_name:match("Gate") then
         distanceThreshold = 1.5
-    elseif not matchesAnyPattern(skin_name) then
+    elseif matchesAnyPattern(skin_name) then
+        distanceThreshold = 2.5
+        if menu.main_walkToContainers:get() and position:dist_to(playerPos) < menu.main_walkDistance:get() then
+            pathfinder.request_move(position)
+        end
+    else
         return false
     end
 
@@ -105,7 +110,7 @@ on_update(function()
         return
     end
 
-    if menu.main_openContainers:get() then
+    if menu.main_walkToContainers:get() then
         local playerPos = local_player:get_position()
         local objects = actors_manager.get_ally_actors()
         
