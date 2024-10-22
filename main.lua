@@ -6,15 +6,6 @@ end
 local patterns = { "^HarvestNode","Door", "Chest", "Clicky", "Cairn", "Break", "LooseStone", "Corpse", "Switch" }
 local menu = require("menu");
 
--- Initialize menu options
-menu.main_boolean = menu.add_boolean("main_boolean", false)
-menu.main_openDoors = menu.add_boolean("main_openDoors", false)
-menu.main_walkToContainers = menu.add_boolean("main_walkToContainers", false)
-menu.main_showContainers = menu.add_boolean("main_showContainers", false)
-menu.main_walkToShrine = menu.add_boolean("main_walkToShrine", false)
-menu.main_walkDistance = menu.add_float("main_walkDistance", 10, 1, 50)
-menu.main_interactDelay = menu.add_float("main_interactDelay", 0.1, 0.1, 1.0)
-
 local last_update_time = 0
 local update_interval = 0.1
 
@@ -44,7 +35,7 @@ on_render_menu(function()
     if menu.main_walkToShrine:get() or menu.main_walkToContainers:get() then
         menu.main_walkDistance:render("Walk Distance", "Set the max distance for walking to shrines and containers", 1)
     end
-    menu.main_interactDelay:render("Interaction Delay", "Set the delay between interactions", 0.1, 0.1, 1.0, 0.1)
+    menu.main_interactDelay:render("Interaction Delay", "Set the delay between interactions", 1)
     menu.main_tree:pop();
 end)
 

@@ -12,6 +12,7 @@ local menu_elements = {
     main_showContainers = checkbox:new(true, get_plugin_hash("main_showContainers")),
     main_walkToShrine = checkbox:new(true, get_plugin_hash("main_walkToShrine")),
     main_walkDistance = slider_float:new(0.0, 20.0, 12.0, get_hash("main_walkDistance")),
+    main_interactDelay = slider_float:new(0.0, 10.0, 1.0, get_hash("main_interactDelay"))
 }
 
 return menu_elements
