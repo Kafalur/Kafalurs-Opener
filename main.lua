@@ -100,57 +100,56 @@ local function check_and_interact_with_door()
     end
 end
 
---- Determine if an object should be interacted with based on its properties and player settings
----@param obj Actor The object to check
+--- Get the nearest interactable object
 ---@param playerPos Vector3 The player's position
----@return boolean True if the object should be interacted with, false otherwise
-local function shouldInteract(obj, playerPos)
-    local skin_name = obj:get_skin_name()
-    local position = obj:get_position()
-    local distanceThreshold = 1.5 -- Default
+---@return Actor|nil The nearest interactable object, or nil if none found
+local function get_nearest_interactable(playerPos)
+    local objects = actors_manager:get_all_actors()
+    local nearest_obj = nil
+    local min_distance = math.huge
 
-    if skin_name:match("Shrine") then
-        distanceThreshold = 2.5
-        if menu.main_walkToShrine:get() and position:dist_to(playerPos) < menu.main_walkDistance:get() then
-            if get_time_since_inject() > next_move_time then
-                pathfinder.request_move(position)
+    for _, obj in ipairs(objects) do
+        if obj:is_interactable() and matchesAnyPattern(obj:get_skin_name()) then
+            local distance = obj:get_position():dist_to(playerPos)
+            if distance < min_distance and distance <= menu.main_walkDistance:get() then
+                min_distance = distance
+                nearest_obj = obj
             end
         end
-    elseif skin_name:match("Gate") then
-        distanceThreshold = 1.5
-    elseif matchesAnyPattern(skin_name) then
-        distanceThreshold = 2.5
-        if menu.main_walkToContainers:get() and position:dist_to(playerPos) < menu.main_walkDistance:get() then
-            if get_time_since_inject() > next_move_time then
-                pathfinder.request_move(position)
-            end
-        end
-    else
-        return false
     end
 
-    return position:dist_to(playerPos) < distanceThreshold
+    return nearest_obj
 end
 
 --- Process all interactable objects in the game world
 ---@return boolean True if an interaction was performed, false otherwise
 local function process_interactables()
     local playerPos = get_local_player():get_position()
-    local objects = actors_manager:get_all_actors()
+    local nearest_obj = get_nearest_interactable(playerPos)
     
-    for _, obj in ipairs(objects) do 
-        if obj:is_interactable() then
-            local should_interact = shouldInteract(obj, playerPos)
-            if should_interact then
-                local success, error_message = pcall(interact_object, obj)
-                if success then
-                    console.print("Interacting with " .. obj:get_skin_name())
-                    last_interact_time = get_time_since_inject()
-                    next_move_time = last_interact_time + menu.main_interactDelay:get() + 1.0
-                    return true -- Exit the function after interacting with one object
-                else
-                    console.print("Failed to interact: " .. error_message)
-                end
+    if nearest_obj then
+        local obj_pos = nearest_obj:get_position()
+        local distance = obj_pos:dist_to(playerPos)
+        local skin_name = nearest_obj:get_skin_name()
+        local should_walk = (skin_name:match("Shrine") and menu.main_walkToShrine:get()) or
+                            (not skin_name:match("Shrine") and menu.main_walkToContainers:get())
+        
+        if distance > 2.5 and should_walk then
+            -- Move towards the object if it's too far and walking is enabled
+            if get_time_since_inject() > next_move_time then
+                pathfinder.request_move(obj_pos)
+                next_move_time = get_time_since_inject() + 0.5 -- Small delay to prevent constant path requests
+            end
+        elseif distance <= 2.5 then
+            -- Interact with the object if it's close enough
+            local success, error_message = pcall(interact_object, nearest_obj)
+            if success then
+                console.print("Interacting with " .. nearest_obj:get_skin_name())
+                last_interact_time = get_time_since_inject()
+                next_move_time = last_interact_time + menu.main_interactDelay:get() + 1.0
+                return true
+            else
+                console.print("Failed to interact: " .. error_message)
             end
         end
     end
@@ -167,12 +166,7 @@ on_update(function()
 
     local current_time = get_time_since_inject()
     if current_time - last_interact_time >= menu.main_interactDelay:get() then
-        if menu.main_walkToContainers:get() then
-            if process_interactables() then
-                return
-            end
-        end
-
+        process_interactables()
         check_and_interact_with_door()
     end
 end)
@@ -194,4 +188,4 @@ on_render(function()
 end)
 
 --- Print the plugin version to the console
-console.print("Kafalurs Opener - Version 1.7");
+console.print("Kafalurs Opener - Version 1.8");
