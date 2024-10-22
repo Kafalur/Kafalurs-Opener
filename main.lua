@@ -6,8 +6,7 @@ end
 local patterns = { "^HarvestNode","Door", "Chest", "Clicky", "Cairn", "Break", "LooseStone", "Corpse", "Switch" }
 local menu = require("menu");
 
-local last_update_time = 0
-local update_interval = 0.1
+local last_interact_time = 0
 
 local function matchesAnyPattern(skin_name, extra)
     for _, pattern in ipairs(patterns) do
@@ -40,7 +39,6 @@ on_render_menu(function()
 end)
 
 local actors_cache = {}
-local Interact_Delay = 0.0
 local Move_Delay = 0.0
 
 local function contains(s, substring)
@@ -74,7 +72,7 @@ local function check_and_interact_with_door()
     if locked_door then
         if locked_door:get_position():dist_to(get_local_player():get_position()) < 4 then
             interact_object(locked_door)
-            Interact_Delay = get_time_since_inject() + menu.main_interactDelay:get()
+            last_interact_time = get_time_since_inject()
             Move_Delay = get_time_since_inject() + menu.main_interactDelay:get() + 1.0
         end
     end
@@ -112,40 +110,43 @@ end
 on_update(function()
     local local_player = get_local_player()
     
-    if not local_player or not menu.main_boolean:get() or get_time_since_inject() < Interact_Delay then
+    if not local_player or not menu.main_boolean:get() then
         return
     end
 
-    if menu.main_walkToContainers:get() then
-        local playerPos = local_player:get_position()
-        local objects = actors_manager.get_ally_actors()
-        
-        actors_cache = {}
-        
-        for _, obj in ipairs(objects) do 
-            if obj:is_interactable() then
-                local should_interact = shouldInteract(obj, playerPos)
-                if should_interact then
-                    -- Add error handling for interact_object
-                    local success, error_message = pcall(function()
-                        interact_object(obj)
-                    end)
-                    if success then
-                        console.print("Interacting with " .. obj:get_skin_name())
-                        Interact_Delay = get_time_since_inject() + menu.main_interactDelay:get()
-                        Move_Delay = get_time_since_inject() + menu.main_interactDelay:get() + 1.0 -- Add 1 second to move delay
-                        break -- Exit the loop after interacting with one object
-                    else
-                        console.print("Failed to interact: " .. error_message)
+    local current_time = get_time_since_inject()
+    if current_time - last_interact_time >= menu.main_interactDelay:get() then
+        if menu.main_walkToContainers:get() then
+            local playerPos = local_player:get_position()
+            local objects = actors_manager.get_ally_actors()
+            
+            actors_cache = {}
+            
+            for _, obj in ipairs(objects) do 
+                if obj:is_interactable() then
+                    local should_interact = shouldInteract(obj, playerPos)
+                    if should_interact then
+                        -- Add error handling for interact_object
+                        local success, error_message = pcall(function()
+                            interact_object(obj)
+                        end)
+                        if success then
+                            console.print("Interacting with " .. obj:get_skin_name())
+                            last_interact_time = current_time
+                            Move_Delay = current_time + menu.main_interactDelay:get() + 1.0 -- Add 1 second to move delay
+                            break -- Exit the loop after interacting with one object
+                        else
+                            console.print("Failed to interact: " .. error_message)
+                        end
                     end
+                    -- Add object to cache regardless of interaction
+                    table.insert(actors_cache, {Object = obj, position = obj:get_position(), skin_name = obj:get_skin_name()})
                 end
-                -- Add object to cache regardless of interaction
-                table.insert(actors_cache, {Object = obj, position = obj:get_position(), skin_name = obj:get_skin_name()})
             end
         end
-    end
 
-    check_and_interact_with_door()
+        check_and_interact_with_door()
+    end
 end)
 
 on_render(function()
@@ -162,4 +163,4 @@ on_render(function()
     end
 end)
 
-console.print("Kafalurs Opener - Version 1.4");
+console.print("Kafalurs Opener - Version 1.5");
