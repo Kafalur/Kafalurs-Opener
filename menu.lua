@@ -15,19 +15,62 @@ local menu_elements = {
     main_tree = tree_node:new(0),
     --- Checkbox to enable/disable the plugin
     main_boolean = checkbox:new(true, get_plugin_hash("main_boolean")),
-    --- Checkbox to enable/disable door opening
+    
+    -- New submenus
+    doors_tree = tree_node:new(0),
+    containers_tree = tree_node:new(0),
+    shrine_tree = tree_node:new(0),
+    settings_tree = tree_node:new(0),
+
+    -- Existing elements
     main_openDoors = checkbox:new(true, get_plugin_hash("main_openDoors")),
-    --- Checkbox to enable/disable walking to containers
+    main_walkToDoors = checkbox:new(true, get_plugin_hash("main_walkToDoors")),
     main_walkToContainers = checkbox:new(true, get_plugin_hash("main_walkToContainers")),
-    --- Checkbox to enable/disable showing containers
     main_showContainers = checkbox:new(true, get_plugin_hash("main_showContainers")),
-    --- Checkbox to enable/disable walking to shrines
     main_walkToShrine = checkbox:new(true, get_plugin_hash("main_walkToShrine")),
-    --- Slider to set the maximum walk distance
     main_walkDistance = slider_float:new(0.0, 20.0, 12.0, get_hash("main_walkDistance")),
-    --- Slider to set the interaction delay
-    main_interactDelay = slider_float:new(0.0, 10.0, 1.0, get_hash("main_interactDelay"))
+    main_interactDelay = slider_float:new(0.0, 10.0, 1.0, get_hash("main_interactDelay")),
+    main_showShrines = checkbox:new(true, get_plugin_hash("main_showShrines")),
 }
 
---- Return the menu elements table
-return menu_elements
+--- Render the plugin menu
+local function render_menu()
+    if not menu_elements.main_tree:push("Kafalurs Opener") then
+        return
+    end
+    
+    menu_elements.main_boolean:render("Enable Plugin", "Activates or deactivates the entire plugin")
+    
+    if menu_elements.doors_tree:push("Doors") then
+        menu_elements.main_walkToDoors:render("Walk to Doors", "Walk to doors to open them")
+        menu_elements.main_openDoors:render("Show Doors", "Highlight doors in the vicinity")
+        menu_elements.doors_tree:pop()
+    end
+    
+    if menu_elements.containers_tree:push("Containers") then
+        menu_elements.main_walkToContainers:render("Walk to Containers", "Automatically walk to containers")
+        menu_elements.main_showContainers:render("Show Containers", "Highlight containers in the vicinity")
+        menu_elements.containers_tree:pop()
+    end
+    
+    if menu_elements.shrine_tree:push("Shrines") then
+        menu_elements.main_walkToShrine:render("Walk to Shrines", "Automatically walk to shrines")
+        -- Add this new line
+        menu_elements.main_showShrines:render("Show Shrines", "Highlight shrines in the vicinity")
+        menu_elements.shrine_tree:pop()
+    end
+    
+    if menu_elements.settings_tree:push("Settings") then
+        menu_elements.main_walkDistance:render("Walk Distance", "Maximum distance for walking to objects", 1)
+        menu_elements.main_interactDelay:render("Interaction Delay", "Delay between interactions", 1)
+        menu_elements.settings_tree:pop()
+    end
+    
+    menu_elements.main_tree:pop()
+end
+
+--- Return the menu elements table and render function
+return {
+    elements = menu_elements,
+    render = render_menu
+}
