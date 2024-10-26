@@ -1,5 +1,6 @@
 --- Prefix for plugin-specific hashes
-local plugin_label = "Kafalurs_Opener_PLUGIN_"
+local plugin_version = "1.0.1"
+local plugin_label = "Auto Opener | Kafalur | V" .. plugin_version
 
 --- Generate a unique hash for a plugin element
 ---@param name string The name of the plugin element
@@ -35,7 +36,7 @@ local menu_elements = {
 
 --- Render the plugin menu
 local function render_menu()
-    if not menu_elements.main_tree:push("Kafalurs Opener") then
+    if not menu_elements.main_tree:push(plugin_label) then
         return
     end
     
